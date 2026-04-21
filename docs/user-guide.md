@@ -9,6 +9,7 @@ This guide has been reorganized into smaller Diátaxis pages.
 
 ## Common tasks
 
+- [Commands](how-to/commands.md)
 - [Switch engines](how-to/switch-engines.md)
 - [Projects](how-to/projects.md)
 - [Worktrees](how-to/worktrees.md)

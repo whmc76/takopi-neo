@@ -43,7 +43,7 @@ This page is a high-level map of Takopi’s internal modules: what they do and h
 | `telegram/client.py` | Telegram API wrapper with retry/outbox semantics. |
 | `telegram/render.py` | Telegram markdown rendering and trimming. |
 | `telegram/onboarding.py` | Interactive setup and setup validation UX. |
-| `telegram/commands/*` | In-chat command handlers (`/agent`, `/file`, `/topic`, `/ctx`, `/new`, …). |
+| `telegram/commands/*` | In-chat command handlers (`/help`, `/agent`, `/file`, `/topic`, `/ctx`, `/new`, …). |
 
 ## Plugins
 

@@ -22,6 +22,7 @@ nav = [
   ] },
   { "How-to" = [
     { "Overview" = "how-to/index.md" },
+    { "Commands" = "how-to/commands.md" },
     { "Switch engines" = "how-to/switch-engines.md" },
     { "Projects" = "how-to/projects.md" },
     { "Worktrees" = "how-to/worktrees.md" },

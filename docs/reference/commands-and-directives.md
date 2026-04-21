@@ -2,6 +2,9 @@
 
 This page documents Takopi’s user-visible command surface: message directives, in-chat commands, and the CLI.
 
+For a task-oriented guide, see [Use Telegram commands and directives](../how-to/commands.md).
+Inside Telegram, send `/help` to show the active command set for that bot.
+
 ## Message directives
 
 Takopi parses the first non-empty line of a message for a directive prefix.
@@ -34,6 +37,7 @@ This line is parsed from replies and takes precedence over new directives.
 
 | Command | Description |
 |---------|-------------|
+| `/help` | Show the active command guide in Telegram. |
 | `/cancel` | Reply to the progress message to stop the current run. |
 | `/agent` | Show/set the default engine for the current scope. |
 | `/model` | Show/set the model override for the current scope. |

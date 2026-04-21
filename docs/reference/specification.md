@@ -369,6 +369,7 @@ Takopi SHOULD keep the bot’s slash-command menu in sync at startup by calling
 `setMyCommands` with the canonical list of supported commands.
 
 * The command list MUST include:
+  * `help` — show the command guide
   * `cancel` — cancel the current run
   * one entry per configured engine
   * one entry per configured project alias that is a valid Telegram command

@@ -69,7 +69,7 @@ Validation rules:
 - `projects` is optional.
 - Each project entry must include `path` (string, non-empty).
 - `default_project` must match a configured project alias.
-- Project aliases cannot collide with engine ids or reserved commands (`/cancel`).
+- Project aliases cannot collide with engine ids or reserved commands (for example `/help` and `/cancel`).
 - `default_engine` and per-project `default_engine` must be valid engine ids.
 - `projects.<alias>.chat_id` must be unique and must not match `transports.telegram.chat_id`.
 - `transport` defaults to `"telegram"` when omitted; override per-run with `--transport`.

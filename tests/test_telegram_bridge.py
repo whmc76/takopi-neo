@@ -134,6 +134,7 @@ def test_build_bot_commands_includes_cancel_and_engine() -> None:
 
     assert {"command": "cancel", "description": "cancel run"} in commands
     assert {"command": "file", "description": "upload or fetch files"} in commands
+    assert {"command": "help", "description": "show command help"} in commands
     assert {"command": "new", "description": "start a new thread"} in commands
     assert {"command": "ctx", "description": "show or update context"} in commands
     assert {"command": "agent", "description": "set default engine"} in commands
@@ -234,6 +235,7 @@ def test_build_bot_commands_caps_total() -> None:
 
     assert len(commands) == 100
     assert any(cmd["command"] == "codex" for cmd in commands)
+    assert any(cmd["command"] == "help" for cmd in commands)
     assert any(cmd["command"] == "cancel" for cmd in commands)
 
 
@@ -3227,6 +3229,38 @@ async def test_run_main_loop_handles_command_plugins(monkeypatch) -> None:
     assert runner.calls == []
     assert transport.send_calls
     assert transport.send_calls[-1]["message"].text == "echo:hello"
+
+
+@pytest.mark.anyio
+async def test_run_main_loop_handles_help_command() -> None:
+    transport = FakeTransport()
+    runner = ScriptRunner([Return(answer="ok")], engine=CODEX_ENGINE)
+    cfg = make_cfg(
+        transport,
+        runner,
+        forward_coalesce_s=FAST_FORWARD_COALESCE_S,
+        media_group_debounce_s=FAST_MEDIA_GROUP_DEBOUNCE_S,
+    )
+
+    async def poller(_cfg: TelegramBridgeConfig):
+        yield TelegramIncomingMessage(
+            transport="telegram",
+            chat_id=123,
+            message_id=1,
+            text="/help",
+            reply_to_message_id=None,
+            reply_to_text=None,
+            sender_id=123,
+        )
+
+    await run_main_loop(cfg, poller)
+
+    assert runner.calls == []
+    assert transport.send_calls
+    text = transport.send_calls[-1]["message"].text
+    assert "Takopi command help" in text
+    assert "/help - Show this command guide." in text
+    assert "/new - Clear stored sessions" in text
 
 
 @pytest.mark.anyio

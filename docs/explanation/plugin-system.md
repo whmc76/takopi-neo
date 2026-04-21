@@ -81,7 +81,7 @@ Plugin IDs must match:
 ^[a-z0-9_]{1,32}$
 ```
 
-Reserved IDs include core chat and CLI command names such as `cancel`, `init`, and `plugins`.
+Reserved IDs include core chat and CLI command names such as `help`, `cancel`, `init`, and `plugins`.
 
 ## How to debug discovery and loading
 

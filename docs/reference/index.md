@@ -9,7 +9,7 @@ If you’re trying to understand the *why*, use **[Explanation](../explanation/i
 
 - [Commands & directives](commands-and-directives.md)
   - Message prefixes like `/<engine-id>`, `/<project-alias>`, and `@branch`
-  - In-chat commands like `/cancel`, `/new`, `/ctx`, `/file …`, `/topic …`
+  - In-chat commands like `/help`, `/cancel`, `/new`, `/ctx`, `/file …`, `/topic …`
 - [Configuration](config.md)
   - `takopi.toml` options and defaults
   - Telegram transport options (sessions, topics, files, voice transcription)

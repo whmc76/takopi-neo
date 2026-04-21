@@ -7,6 +7,7 @@ If you need exact options and defaults, use **[Reference](../reference/index.md)
 
 ## Daily use
 
+- [Commands](commands.md) (`/help`, directives, chat commands)
 - [Switch engines](switch-engines.md) (`/codex`, `/claude`, `/opencode`, `/pi`)
 - [Projects](projects.md) (register repos + run from anywhere)
 - [Worktrees](worktrees.md) (run work on `@branch` without switching your main checkout)

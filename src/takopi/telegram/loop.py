@@ -35,6 +35,7 @@ from .commands.handlers import (
     handle_ctx_command,
     handle_file_command,
     handle_file_put_default,
+    handle_help_command,
     handle_media_group,
     handle_model_command,
     handle_new_command,
@@ -158,6 +159,10 @@ def _dispatch_builtin_command(
     scope_chat_ids = ctx.scope_chat_ids
     reply = ctx.reply
     task_group = ctx.task_group
+    if command_id == "help":
+        task_group.start_soon(handle_help_command, cfg, msg)
+        return True
+
     if command_id == "file":
         if not cfg.files.enabled:
             handler = partial(
