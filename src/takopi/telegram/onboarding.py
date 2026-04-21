@@ -40,7 +40,7 @@ from ..settings import (
     require_telegram,
 )
 from ..transports import SetupResult
-from .api_models import User
+from .api_models import Message, User
 from .client import TelegramClient, TelegramRetryAfter
 from .topics import _validate_topics_setup_for
 
@@ -67,6 +67,7 @@ class ChatInfo:
     first_name: str | None
     last_name: str | None
     chat_type: str | None
+    migrated_from_chat_id: int | None = None
 
     @property
     def is_group(self) -> bool:
@@ -293,17 +294,38 @@ async def wait_for_chat(
             chat = msg.chat
             if chat is None:
                 continue
-            chat_id = chat.id
-            return ChatInfo(
-                chat_id=chat_id,
-                username=chat.username,
-                title=chat.title,
-                first_name=chat.first_name,
-                last_name=chat.last_name,
-                chat_type=chat.type,
-            )
+            return await _chat_info_from_message(bot, msg)
     finally:
         await bot.close()
+
+
+async def _chat_info_from_message(bot: TelegramClient, msg: Message) -> ChatInfo:
+    chat = msg.chat
+    migrated_from_chat_id: int | None = None
+    if msg.migrate_to_chat_id is not None:
+        migrated_from_chat_id = chat.id
+        migrated_chat = await bot.get_chat(msg.migrate_to_chat_id)
+        if migrated_chat is not None:
+            chat = migrated_chat
+        else:
+            return ChatInfo(
+                chat_id=msg.migrate_to_chat_id,
+                username=None,
+                title=chat.title,
+                first_name=None,
+                last_name=None,
+                chat_type="supergroup",
+                migrated_from_chat_id=migrated_from_chat_id,
+            )
+    return ChatInfo(
+        chat_id=chat.id,
+        username=chat.username,
+        title=chat.title,
+        first_name=chat.first_name,
+        last_name=chat.last_name,
+        chat_type=chat.type,
+        migrated_from_chat_id=migrated_from_chat_id,
+    )
 
 
 def render_engine_table(ui: UI, rows: list[tuple[str, bool, str | None]]) -> None:
@@ -796,6 +818,8 @@ async def capture_chat(
         ui.print(f"  got chat_id {chat.chat_id} for {chat.kind}")
     else:
         ui.print(f"  got chat_id {chat.chat_id} for {chat.display} ({chat.kind})")
+    if chat.migrated_from_chat_id is not None:
+        ui.print(f"  group migrated from {chat.migrated_from_chat_id}; using new chat_id")
     state.chat = chat
 
 
@@ -863,11 +887,20 @@ async def step_capture_chat(ui: UI, svc: Services, state: OnboardingState) -> No
                 "how to proceed?",
                 choices=[
                     ("retry validation", "retry"),
+                    ("capture another message", "capture"),
                     ("switch to assistant mode", "assistant"),
                 ],
             )
             if choice is None:
                 raise OnboardingCancelled()
+            if choice == "capture":
+                await capture_chat(
+                    ui,
+                    svc,
+                    state,
+                    prompt=render_topics_group_instructions(state.bot_ref),
+                )
+                continue
             if choice == "assistant":
                 state.persona = "assistant"
                 state.topics_enabled = False

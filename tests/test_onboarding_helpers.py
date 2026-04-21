@@ -155,10 +155,11 @@ def test_onboarding_state_helpers(tmp_path: Path) -> None:
     assert state.bot_ref == "@takopi_bot"
 
 
-def test_display_path(tmp_path: Path) -> None:
+def test_display_path() -> None:
     home_path = Path.home() / "takopi" / "cfg.toml"
+    outside_home = Path(Path.home().anchor) / "takopi-outside-home" / "cfg.toml"
     assert onboarding.display_path(home_path).startswith("~/")
-    assert onboarding.display_path(tmp_path / "cfg.toml") == str(tmp_path / "cfg.toml")
+    assert onboarding.display_path(outside_home) == str(outside_home)
 
 
 def test_build_transport_patch_requires_fields(tmp_path: Path) -> None:
@@ -428,6 +429,52 @@ async def test_wait_for_chat_filters_updates(monkeypatch) -> None:
 
 
 @pytest.mark.anyio
+async def test_wait_for_chat_uses_migrated_supergroup_id(monkeypatch) -> None:
+    updates = [
+        [],
+        [
+            Update(
+                update_id=1,
+                message=Message(
+                    message_id=1,
+                    chat=Chat(id=-5120899054, title="Team", type="group"),
+                    migrate_to_chat_id=-1005120899054,
+                ),
+            )
+        ],
+    ]
+
+    class _Bot:
+        def __init__(self, _token: str) -> None:
+            self.calls = 0
+
+        async def get_updates(self, *args, **kwargs):
+            _ = args, kwargs
+            idx = self.calls
+            self.calls += 1
+            return updates[idx]
+
+        async def get_chat(self, chat_id: int) -> Chat:
+            return Chat(
+                id=chat_id,
+                title="Team",
+                type="supergroup",
+                is_forum=True,
+            )
+
+        async def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(onboarding, "TelegramClient", _Bot)
+
+    chat = await onboarding.wait_for_chat("token")
+
+    assert chat.chat_id == -1005120899054
+    assert chat.migrated_from_chat_id == -5120899054
+    assert chat.chat_type == "supergroup"
+
+
+@pytest.mark.anyio
 async def test_validate_topics_onboarding_errors(monkeypatch) -> None:
     class _Bot:
         def __init__(self, _token: str) -> None:
@@ -526,6 +573,57 @@ async def test_step_capture_chat_workspace_switches_to_assistant(
 
     assert state.persona == "assistant"
     assert state.topics_enabled is False
+
+
+@pytest.mark.anyio
+async def test_step_capture_chat_workspace_can_capture_again(tmp_path: Path) -> None:
+    chats = iter(
+        [
+            onboarding.ChatInfo(
+                chat_id=-5120899054,
+                username=None,
+                title="Team",
+                first_name=None,
+                last_name=None,
+                chat_type="group",
+            ),
+            onboarding.ChatInfo(
+                chat_id=-1005120899054,
+                username=None,
+                title="Team",
+                first_name=None,
+                last_name=None,
+                chat_type="supergroup",
+            ),
+        ]
+    )
+    issues = iter([ConfigError("not a supergroup"), None])
+
+    class _Services(DummyServices):
+        async def wait_for_chat(self, _token: str) -> onboarding.ChatInfo:
+            return next(chats)
+
+        async def validate_topics(
+            self, _token: str, _chat_id: int, _scope: onboarding.TopicScope
+        ) -> ConfigError | None:
+            return next(issues)
+
+    ui = DummyUI(selects=["capture"])
+    state = onboarding.OnboardingState(config_path=tmp_path / "cfg", force=False)
+    state.token = "token"
+    state.bot_name = "Takopi"
+    state.persona = "workspace"
+    state.topics_scope = "auto"
+    state.topics_enabled = True
+
+    await onboarding.step_capture_chat(
+        cast(onboarding.UI, ui), cast(onboarding.Services, _Services()), state
+    )
+
+    assert state.chat is not None
+    assert state.chat.chat_id == -1005120899054
+    assert state.persona == "workspace"
+    assert state.topics_enabled is True
 
 
 @pytest.mark.anyio
