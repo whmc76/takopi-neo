@@ -74,7 +74,7 @@ def _parse_reconnect_message(message: str) -> tuple[int, int] | None:
 
 def _default_codex_cmd() -> str:
     if os.name == "nt":
-        return shutil.which("codex.cmd") or "codex.cmd"
+        return shutil.which("codex.cmd") or shutil.which("codex") or "codex"
     return "codex"
 
 

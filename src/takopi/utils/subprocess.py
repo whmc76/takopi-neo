@@ -15,6 +15,40 @@ from ..logging import get_logger
 logger = get_logger(__name__)
 
 
+def _windows_pathext() -> tuple[str, ...]:
+    pathext = os.environ.get("PATHEXT")
+    if not pathext:
+        return (".COM", ".EXE", ".BAT", ".CMD")
+    exts: list[str] = []
+    for item in pathext.split(os.pathsep):
+        ext = item.strip()
+        if not ext:
+            continue
+        exts.append(ext if ext.startswith(".") else f".{ext}")
+    return tuple(exts) or (".COM", ".EXE", ".BAT", ".CMD")
+
+
+def _resolve_windows_program(program: str) -> str:
+    if os.name != "nt" or not program:
+        return program
+
+    if not os.path.dirname(program):
+        match = shutil.which(program)
+        if match:
+            return match
+        return program
+
+    _base, ext = os.path.splitext(program)
+    if ext:
+        return program
+
+    for suffix in _windows_pathext():
+        candidate = f"{program}{suffix}"
+        if os.path.isfile(candidate):
+            return candidate
+    return program
+
+
 def _resolve_windows_command(cmd: Sequence[str]) -> list[str]:
     """Resolve bare command names to PATHEXT-backed executables on Windows.
 
@@ -27,13 +61,7 @@ def _resolve_windows_command(cmd: Sequence[str]) -> list[str]:
     if os.name != "nt" or not resolved:
         return resolved
 
-    program = resolved[0]
-    if os.path.dirname(program):
-        return resolved
-
-    match = shutil.which(program)
-    if match:
-        resolved[0] = match
+    resolved[0] = _resolve_windows_program(resolved[0])
     return resolved
 
 

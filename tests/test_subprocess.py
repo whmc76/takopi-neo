@@ -98,3 +98,31 @@ async def test_manage_subprocess_leaves_explicit_windows_path_unchanged(
         pass
 
     assert captured["cmd"] == [explicit, "--version"]
+
+
+@pytest.mark.anyio
+async def test_manage_subprocess_resolves_explicit_windows_extensionless_path(
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_open_process(cmd, **kwargs):
+        captured["cmd"] = list(cmd)
+        captured["kwargs"] = kwargs
+        return _FakeProcess(returncode=0)
+
+    explicit = r"C:\Users\Administrator\AppData\Roaming\npm\codex"
+
+    monkeypatch.setattr(subprocess_utils.os, "name", "nt")
+    monkeypatch.setattr(subprocess_utils.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(
+        subprocess_utils.os.path,
+        "isfile",
+        lambda path: path == f"{explicit}.CMD",
+    )
+    monkeypatch.setattr(subprocess_utils.anyio, "open_process", fake_open_process)
+
+    async with subprocess_utils.manage_subprocess([explicit, "--version"]):
+        pass
+
+    assert captured["cmd"] == [f"{explicit}.CMD", "--version"]

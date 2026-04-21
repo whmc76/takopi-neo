@@ -262,3 +262,13 @@ def test_default_codex_cmd_prefers_cmd_on_windows(monkeypatch) -> None:
     )
 
     assert _default_codex_cmd() == "C:/npm/codex.cmd"
+
+
+def test_default_codex_cmd_falls_back_to_codemain_on_windows(monkeypatch) -> None:
+    monkeypatch.setattr("takopi.runners.codex.os.name", "nt")
+    monkeypatch.setattr(
+        "takopi.runners.codex.shutil.which",
+        lambda cmd: "C:/tools/codex.exe" if cmd == "codex" else None,
+    )
+
+    assert _default_codex_cmd() == "C:/tools/codex.exe"
