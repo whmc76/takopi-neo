@@ -11,6 +11,7 @@ from takopi.model import ActionEvent, CompletedEvent, StartedEvent
 from takopi.runners.codex import (
     _AgentMessageSummary,
     CodexRunner,
+    _default_codex_cmd,
     _format_change_summary,
     _normalize_change_list,
     _parse_reconnect_message,
@@ -251,3 +252,13 @@ def test_codex_build_runner_configs(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError):
         build_runner({"profile": 123}, tmp_path)
+
+
+def test_default_codex_cmd_prefers_cmd_on_windows(monkeypatch) -> None:
+    monkeypatch.setattr("takopi.runners.codex.os.name", "nt")
+    monkeypatch.setattr(
+        "takopi.runners.codex.shutil.which",
+        lambda cmd: "C:/npm/codex.cmd" if cmd == "codex.cmd" else None,
+    )
+
+    assert _default_codex_cmd() == "C:/npm/codex.cmd"

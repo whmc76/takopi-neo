@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import os
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -68,6 +70,12 @@ def _parse_reconnect_message(message: str) -> tuple[int, int] | None:
     except (TypeError, ValueError):
         return None
     return (attempt, max_attempts)
+
+
+def _default_codex_cmd() -> str:
+    if os.name == "nt":
+        return shutil.which("codex.cmd") or "codex.cmd"
+    return "codex"
 
 
 def _short_tool_name(server: str | None, tool: str | None) -> str:
@@ -664,7 +672,7 @@ class CodexRunner(ResumeTokenMixin, JsonlSubprocessRunner):
 
 
 def build_runner(config: EngineConfig, config_path: Path) -> Runner:
-    codex_cmd = "codex"
+    codex_cmd = _default_codex_cmd()
 
     extra_args_value = config.get("extra_args")
     if extra_args_value is None:
