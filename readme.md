@@ -51,6 +51,8 @@ cd ~/dev/happy-gadgets
 takopi
 ```
 
+on windows during local development, you can also double-click [`start-takopi.bat`](start-takopi.bat) or run `start-takopi.bat` from `cmd`/powershell. it starts takopi from the repo root and asks `uv` for python 3.14 first.
+
 send a message to your bot. prefix with `/codex`, `/claude`, `/opencode`, or `/pi` to pick an engine. reply to continue a thread.
 
 register a project with `takopi init happy-gadgets`, then target it from anywhere with `/happy-gadgets hard reset the timeline`.
