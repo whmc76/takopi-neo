@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import signal
 from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
@@ -12,6 +13,28 @@ from anyio.abc import Process
 from ..logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _resolve_windows_command(cmd: Sequence[str]) -> list[str]:
+    """Resolve bare command names to PATHEXT-backed executables on Windows.
+
+    npm-installed CLIs often create both an extensionless shim and a `.cmd` file.
+    `CreateProcess()` may try the extensionless shim first and fail with
+    `WinError 5` even though the `.cmd` entry works. Resolving through
+    `shutil.which()` ensures we use the actual launchable target.
+    """
+    resolved = list(cmd)
+    if os.name != "nt" or not resolved:
+        return resolved
+
+    program = resolved[0]
+    if os.path.dirname(program):
+        return resolved
+
+    match = shutil.which(program)
+    if match:
+        resolved[0] = match
+    return resolved
 
 
 async def wait_for_process(proc: Process, timeout: float) -> bool:
@@ -32,7 +55,7 @@ def terminate_process(proc: Process) -> None:
 def kill_process(proc: Process) -> None:
     _signal_process(
         proc,
-        signal.SIGKILL,
+        getattr(signal, "SIGKILL", signal.SIGTERM),
         fallback=proc.kill,
         log_event="subprocess.kill.failed",
     )
@@ -71,6 +94,7 @@ async def manage_subprocess(
     cmd: Sequence[str], **kwargs: Any
 ) -> AsyncIterator[Process]:
     """Ensure subprocesses receive SIGTERM, then SIGKILL after a 2s timeout."""
+    cmd = _resolve_windows_command(cmd)
     if os.name == "posix":
         kwargs.setdefault("start_new_session", True)
     proc = await anyio.open_process(cmd, **kwargs)
