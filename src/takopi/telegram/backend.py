@@ -133,6 +133,7 @@ class TelegramBackend(TransportBackend):
             chat_id=chat_id,
             startup_msg=startup_msg,
             exec_cfg=exec_cfg,
+            language=settings.language,
             session_mode=settings.session_mode,
             show_resume_line=settings.show_resume_line,
             voice_transcription=settings.voice_transcription,

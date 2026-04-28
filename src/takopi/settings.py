@@ -104,6 +104,7 @@ class TelegramTransportSettings(BaseModel):
 
     bot_token: NonEmptyStr
     chat_id: ChatId
+    language: Literal["en", "zh"] = "en"
     allowed_user_ids: list[StrictInt] = Field(default_factory=list)
     message_overflow: Literal["trim", "split"] = "trim"
     voice_transcription: bool = False

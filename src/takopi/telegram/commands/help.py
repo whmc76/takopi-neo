@@ -20,5 +20,6 @@ async def _handle_help_command(
             cfg.runtime,
             include_file=cfg.files.enabled,
             include_topics=cfg.topics.enabled,
+            language=cfg.language,
         )
     )

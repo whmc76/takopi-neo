@@ -119,6 +119,7 @@ class TelegramBridgeConfig:
     chat_id: int
     startup_msg: str
     exec_cfg: ExecBridgeConfig
+    language: Literal["en", "zh"] = "en"
     session_mode: Literal["stateless", "chat"] = "stateless"
     show_resume_line: bool = True
     voice_transcription: bool = False
@@ -321,6 +322,7 @@ def build_bot_commands(
     *,
     include_file: bool = True,
     include_topics: bool = False,
+    language: Literal["en", "zh"] = "en",
 ):
     from .commands import build_bot_commands as _build
 
@@ -328,6 +330,7 @@ def build_bot_commands(
         runtime,
         include_file=include_file,
         include_topics=include_topics,
+        language=language,
     )
 
 

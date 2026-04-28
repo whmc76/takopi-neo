@@ -20,6 +20,26 @@ This document captures current behavior so transport changes stay intentional.
 
 `parse_incoming_update` accepts text messages and voice notes.
 
+### Language
+
+Takopi can localize its Telegram command menu and `/help` text:
+
+=== "takopi config"
+
+    ```sh
+    takopi config set transports.telegram.language "zh"
+    ```
+
+=== "toml"
+
+    ```toml
+    [transports.telegram]
+    language = "zh" # en | zh
+    ```
+
+The setting affects Takopi-owned command descriptions and help text. It does not
+translate model output or command syntax.
+
 ### Voice transcription
 
 If voice transcription is enabled, takopi downloads the voice payload from Telegram,

@@ -14,6 +14,7 @@ from takopi.telegram.commands.topics import _handle_topic_command
 import takopi.telegram.loop as telegram_loop
 import takopi.telegram.topics as telegram_topics
 from takopi.directives import parse_directives
+from takopi.telegram.commands.menu import build_help_text
 from takopi.telegram.api_models import Chat, File, ForumTopic, Message, Update, User
 from takopi.settings import TelegramFilesSettings, TelegramTopicsSettings
 from takopi.telegram.bridge import (
@@ -139,6 +140,39 @@ def test_build_bot_commands_includes_cancel_and_engine() -> None:
     assert {"command": "ctx", "description": "show or update context"} in commands
     assert {"command": "agent", "description": "set default engine"} in commands
     assert any(cmd["command"] == "codex" for cmd in commands)
+
+
+def test_build_bot_commands_supports_zh() -> None:
+    runner = ScriptRunner(
+        [Return(answer="ok")], engine=CODEX_ENGINE, resume_value="sid"
+    )
+    runtime = TransportRuntime(
+        router=_make_router(runner),
+        projects=_empty_projects(),
+    )
+
+    commands = build_bot_commands(runtime, language="zh")
+
+    assert {"command": "help", "description": "显示命令帮助"} in commands
+    assert {"command": "cancel", "description": "取消运行"} in commands
+    assert {"command": "file", "description": "上传或获取文件"} in commands
+    assert {"command": "codex", "description": "使用引擎：codex"} in commands
+
+
+def test_build_help_text_supports_zh() -> None:
+    runner = ScriptRunner(
+        [Return(answer="ok")], engine=CODEX_ENGINE, resume_value="sid"
+    )
+    runtime = TransportRuntime(
+        router=_make_router(runner),
+        projects=_empty_projects(),
+    )
+
+    text = build_help_text(runtime, language="zh")
+
+    assert "Takopi 命令帮助" in text
+    assert "`/help` - 显示这份命令指南。" in text
+    assert "`/new` - 清除当前聊天或话题保存的会话" in text
 
 
 def test_build_bot_commands_includes_projects() -> None:
@@ -3261,6 +3295,42 @@ async def test_run_main_loop_handles_help_command() -> None:
     assert "Takopi command help" in text
     assert "/help - Show this command guide." in text
     assert "/new - Clear stored sessions" in text
+
+
+@pytest.mark.anyio
+async def test_run_main_loop_handles_help_command_zh() -> None:
+    transport = FakeTransport()
+    runner = ScriptRunner([Return(answer="ok")], engine=CODEX_ENGINE)
+    cfg = make_cfg(
+        transport,
+        runner,
+        forward_coalesce_s=FAST_FORWARD_COALESCE_S,
+        media_group_debounce_s=FAST_MEDIA_GROUP_DEBOUNCE_S,
+    )
+    cfg = replace(cfg, language="zh")
+
+    async def poller(_cfg: TelegramBridgeConfig):
+        yield TelegramIncomingMessage(
+            transport="telegram",
+            chat_id=123,
+            message_id=1,
+            text="/help",
+            reply_to_message_id=None,
+            reply_to_text=None,
+            sender_id=123,
+        )
+
+    await run_main_loop(cfg, poller)
+
+    assert runner.calls == []
+    assert transport.send_calls
+    text = transport.send_calls[-1]["message"].text
+    assert "Takopi 命令帮助" in text
+    assert "/help - 显示这份命令指南。" in text
+    assert "/new - 清除当前聊天或话题保存的会话" in text
+    command_calls = cast(FakeBot, cfg.bot).command_calls
+    assert command_calls
+    assert command_calls[-1]["language_code"] == "zh"
 
 
 @pytest.mark.anyio
